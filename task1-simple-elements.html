@@ -1,0 +1,1394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Task 1: Simple Elements → Landing UI</title>
+
+  <style>
+    /* ============ Design Tokens ============ */
+    :root {
+      /* 60:30:10 palette rule */
+      --bg: #ffffff;             /* 60% */
+      --surface: #F4F4F7;       /* 30% */
+      --accent: #4F46E5;         /* 10% */
+
+      /* Typography / contrast tokens */
+      --text: #0f172a;
+      --text-strong: #0b1223;
+      --muted: #334155;
+      --muted-2: #475569;
+
+      --ring: rgba(79, 70, 229, 0.35);
+      --border: rgba(2, 6, 23, 0.10);
+
+      /* Glassmorphism tokens */
+      --glass-alpha: 0.15; /* 15% white overlay */
+      --glass-bg: rgba(255, 255, 255, 0.12);
+      --glass-border: rgba(255, 255, 255, 0.20); /* 20% crisp edge */
+      --glass-border-soft: rgba(255, 255, 255, 0.12);
+      --glass-shadow: 0 18px 50px rgba(2, 6, 23, 0.10);
+
+      --shadow-sm: 0 4px 14px rgba(2, 6, 23, 0.08);
+      --shadow-md: 0 10px 30px rgba(2, 6, 23, 0.10);
+
+      --radius-8: 8px;
+      --radius-card: 8px;
+
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+
+      /* Typography hierarchy */
+      --h1: 48px;
+      --h2: 32px;
+      --body: 16px;
+      --lh: 1.5;
+    }
+
+    /* ============ Premium Glass System ============ */
+    /* Apply glass defaults */
+    .glass,
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border); /* crisp polished edge */
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .glass::before,
+    .glass-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      /* subtle white overlay with 15% opacity */
+      background: rgba(255, 255, 255, 0.15);
+      pointer-events: none;
+    }
+
+    .glass > *,
+    .glass-panel > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Helper for non-inset pseudo content */
+    .glass-plain {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+    }
+
+    /* Core glass surfaces that existed before but weren’t using the system */
+    .navbar-wrap,
+    .hero-right,
+    .stat,
+    .hero-mock,
+    .mock-topbar,
+    .card,
+    .toggle,
+    .price-card,
+    .tooltip-bubble,
+    .mobile-nav-panel,
+    .mobile-nav-links a,
+    .tip-btn,
+    .skeleton-overlay,
+    .mock-chip {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: rgba(255,255,255,0.12);
+      border-color: var(--glass-border);
+    }
+
+    /* Ensure all specific backgrounds that were solid are replaced */
+    .hero-right { background: rgba(255,255,255,0.12); border: 1px solid var(--glass-border); }
+    .stat { background: rgba(255,255,255,0.12); border: 1px solid var(--glass-border-soft); }
+    .hero-mock { background: rgba(255,255,255,0.12); border: 1px solid var(--glass-border); }
+    .mock-topbar { background: rgba(255,255,255,0.10); border-bottom: 1px solid var(--glass-border-soft); }
+    .card { background: rgba(255,255,255,0.12); border: 1px solid var(--glass-border); border-radius: var(--radius-card); box-shadow: var(--glass-shadow); }
+    .toggle { background: rgba(255,255,255,0.12); border: 1px solid var(--glass-border); }
+    .price-card { background: rgba(255,255,255,0.12); border: 1px solid var(--glass-border); border-radius: var(--radius-card); box-shadow: var(--glass-shadow); }
+    .tooltip-bubble { background: rgba(10, 16, 32, 0.62); border: 1px solid rgba(255,255,255,0.20); }
+    .tip-btn { background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.20); }
+    .mobile-nav-panel { background: rgba(255,255,255,0.14); border: 1px solid var(--glass-border); }
+    .mobile-nav-links a { background: rgba(255,255,255,0.12); border: 1px solid var(--glass-border-soft); }
+    .skeleton-overlay { background: rgba(255,255,255,0.15); }
+
+    /* Force consistent radius on all card-like surfaces */
+    .hero-right,
+    .hero-mock,
+    .stat,
+    .card,
+    .toggle,
+    .price-card,
+    .tooltip-bubble,
+    .mobile-nav-panel,
+    .tip-btn,
+    .mock-chip {
+      border-radius: var(--radius-card);
+    }
+
+
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--surface);
+      color: var(--text);
+      line-height: var(--lh);
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ============ Layout Helpers (Tailwind-ish feel) ============ */
+    .container {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .stack { display: flex; flex-direction: column; gap: 16px; }
+
+    .section { padding: 56px 0; }
+
+    /* ============ Glass Navbar ============ */
+    .navbar-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 14px 0;
+      background: rgba(244, 244, 247, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(2, 6, 23, 0.06);
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 200px;
+    }
+
+    .logo-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background:
+        radial-gradient(70% 70% at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0)),
+        linear-gradient(135deg, rgba(79, 70, 229, 0.95), rgba(79, 70, 229, 0.45));
+      box-shadow: 0 10px 25px rgba(79, 70, 229, 0.25);
+      border: 1px solid rgba(255,255,255,0.35);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      user-select: none;
+    }
+
+    .brand-name {
+      font-weight: 900;
+      letter-spacing: -0.6px;
+      font-size: 16px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 22px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-link {
+      font-weight: 650;
+      color: rgba(15, 23, 42, 0.78);
+      font-size: 14px;
+      padding: 10px 10px;
+      border-radius: 999px;
+      transition: background-color 140ms ease, transform 140ms ease, color 140ms ease;
+    }
+
+    .nav-link:hover {
+      background: rgba(79, 70, 229, 0.10);
+      color: rgba(79, 70, 229, 1);
+      transform: translateY(-1px);
+    }
+
+    .nav-link {
+      position: relative;
+      text-decoration: none;
+      /* subtle iOS-style hover feel */
+      opacity: 0.92;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 160ms ease, color 140ms ease, transform 140ms ease;
+    }
+
+    /* Ensure the underline animation is smooth + subtle */
+    .nav-link::after {
+      transition: transform 220ms ease;
+    }
+
+
+    .nav-link::after {
+      content: "";
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 7px;
+      height: 2px;
+      border-radius: 999px;
+      background: rgba(79, 70, 229, 0.95);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 180ms ease;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .nav-link:hover {
+      opacity: 1;
+    }
+
+    .nav-link:hover::after {
+      transform: scaleX(1);
+    }
+
+    .nav-link.is-active {
+      color: rgba(79, 70, 229, 1);
+      background: rgba(79, 70, 229, 0.10);
+      box-shadow: 0 12px 30px rgba(79, 70, 229, 0.10);
+      transform: translateY(-1px);
+    }
+
+    .nav-link.is-active::after {
+      transform: scaleX(1);
+    }
+
+
+    .nav-cta { min-width: 200px; display: flex; justify-content: flex-end; }
+
+    /* ============ Buttons ============ */
+    .btn {
+      border: 1px solid rgba(0,0,0,0.06);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease, border-color 120ms ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+
+      -webkit-tap-highlight-color: transparent;
+
+
+      color: inherit;
+    }
+
+    .btn:active { transform: translateY(0px) scale(0.99); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border-color: rgba(79, 70, 229, 0.45);
+      box-shadow: 0 10px 26px rgba(79, 70, 229, 0.22);
+    }
+
+    .btn-primary:hover {
+      background: #4338ca;
+      transform: translateY(-1px);
+      box-shadow: 0 14px 34px rgba(79, 70, 229, 0.28);
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.55);
+      border-color: rgba(2, 6, 23, 0.10);
+      color: rgba(15, 23, 42, 0.86);
+      box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+    }
+
+    .btn-ghost:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.75);
+      border-color: rgba(79, 70, 229, 0.20);
+      box-shadow: 0 10px 26px rgba(2, 6, 23, 0.10);
+    }
+
+    /* ============ Hero ============ */
+    .hero { padding: 44px 0 24px; }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(79, 70, 229, 0.08);
+      border: 1px solid rgba(79, 70, 229, 0.18);
+      color: rgba(79, 70, 229, 1);
+      font-weight: 900;
+      letter-spacing: -0.2px;
+      width: fit-content;
+      font-size: 13px;
+    }
+
+    .kicker-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(79, 70, 229, 0.12);
+    }
+
+    h1 {
+      margin: 14px 0 12px;
+      font-size: var(--h1);
+      letter-spacing: -1.2px;
+      line-height: 1.06;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: var(--h2);
+      letter-spacing: -0.9px;
+      line-height: 1.12;
+    }
+
+    .lead {
+      font-size: var(--body);
+      color: var(--muted);
+      margin: 0;
+      max-width: 56ch;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      align-items: center;
+    }
+
+    /* Tooltip */
+    .tooltip { position: relative; display: inline-flex; align-items: center; gap: 10px; }
+
+    .tip-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(2, 6, 23, 0.10);
+      background: rgba(255,255,255,0.7);
+      color: rgba(15, 23, 42, 0.85);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .tip-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(79, 70, 229, 0.28);
+      box-shadow: 0 10px 26px rgba(79, 70, 229, 0.14);
+    }
+
+    .tooltip-bubble {
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 10px);
+      transform: translateX(-50%) scale(0.98);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 130ms ease, transform 130ms ease;
+      background: rgba(15, 23, 42, 0.92);
+      color: rgba(255,255,255,0.96);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 12px;
+      padding: 10px 12px;
+      width: 240px;
+      font-size: 13px;
+      font-weight: 650;
+      box-shadow: 0 18px 50px rgba(2,6,23,0.25);
+    }
+
+    .tooltip-bubble::before {
+      content: "";
+      position: absolute;
+      top: -7px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 8px solid rgba(15, 23, 42, 0.92);
+    }
+
+    .tooltip.is-open .tooltip-bubble {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+      pointer-events: auto;
+    }
+
+    .hero-right {
+      position: relative;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(2, 6, 23, 0.08);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      padding: 18px;
+      overflow: hidden;
+      min-height: 340px;
+    }
+
+    .hero-right::before {
+      content: "";
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, rgba(79, 70, 229, 0.22), rgba(79, 70, 229, 0) 60%);
+      top: -260px;
+      right: -260px;
+      pointer-events: none;
+    }
+
+    .mini-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat {
+      background: rgba(244, 244, 247, 0.65);
+      border: 1px solid rgba(2, 6, 23, 0.06);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 18px;
+      letter-spacing: -0.4px;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 6px;
+      color: rgba(71, 85, 105, 0.95);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    /* Mock */
+    .hero-mock {
+      position: relative;
+      z-index: 1;
+      margin-top: 14px;
+      background: white;
+      border-radius: 14px;
+      border: 1px solid rgba(2, 6, 23, 0.08);
+      box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+      overflow: hidden;
+    }
+
+    .mock-topbar {
+      height: 44px;
+      background: linear-gradient(90deg, rgba(79,70,229,0.18), rgba(79,70,229,0.04));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      border-bottom: 1px solid rgba(2,6,23,0.06);
+    }
+
+    .mock-dots { display: flex; gap: 7px; align-items: center; }
+    .dot { width: 10px; height: 10px; border-radius: 999px; background: rgba(2,6,23,0.12); }
+    .dot:nth-child(1) { background: rgba(239, 68, 68, 0.35); }
+    .dot:nth-child(2) { background: rgba(245, 158, 11, 0.35); }
+    .dot:nth-child(3) { background: rgba(34, 197, 94, 0.35); }
+
+    .mock-chip {
+      background: rgba(79, 70, 229, 0.10);
+      color: rgba(79, 70, 229, 1);
+      border: 1px solid rgba(79, 70, 229, 0.18);
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .mock-body { padding: 14px; display: grid; grid-template-columns: 1fr; gap: 10px; }
+
+    .mock-row {
+      height: 14px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(2,6,23,0.06), rgba(2,6,23,0.02));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mock-row::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-60%);
+      background: linear-gradient(90deg, rgba(79, 70, 229, 0), rgba(79, 70, 229, 0.14), rgba(79, 70, 229, 0));
+      animation: shimmer 2.2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-60%); }
+      50% { transform: translateX(10%); }
+      100% { transform: translateX(60%); }
+    }
+
+    /* ============ Main: Bento grid with hero + features/pricing ============ */
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .bento-hero { grid-column: span 12; }
+    .bento-features { grid-column: span 12; }
+    .bento-pricing { grid-column: span 12; }
+
+    /* Features */
+    .features-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .features-head p {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 650;
+      max-width: 52ch;
+      font-size: 14px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(2, 6, 23, 0.08);
+      border-radius: var(--radius-8);
+      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      min-height: 180px;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(79, 70, 229, 0.22);
+      box-shadow: 0 14px 34px rgba(2, 6, 23, 0.10);
+    }
+
+    .icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(79, 70, 229, 0.10);
+      border: 1px solid rgba(79, 70, 229, 0.22);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: rgba(79, 70, 229, 1);
+      user-select: none;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: -0.3px;
+    }
+
+    .card p {
+      margin: 0;
+      color: rgba(71, 85, 105, 0.98);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .card .card-link {
+      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 900;
+      color: rgba(79, 70, 229, 1);
+      background: rgba(79, 70, 229, 0.08);
+      border: 1px solid rgba(79, 70, 229, 0.18);
+      border-radius: 12px;
+      padding: 10px 12px;
+      width: fit-content;
+      cursor: pointer;
+      transition: transform 120ms ease, background-color 120ms ease;
+    }
+
+    .card .card-link:hover {
+      transform: translateY(-1px);
+      background: rgba(79, 70, 229, 0.12);
+    }
+
+    /* ============ Pricing ============ */
+    .pricing-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .toggle {
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(2, 6, 23, 0.08);
+      border-radius: 999px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .pricing-head h2 { font-size: var(--h2); letter-spacing: -0.9px; }
+
+    .pricing-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-weight: 650;
+      max-width: 52ch;
+      font-size: 14px;
+    }
+
+    .toggle {
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(2, 6, 23, 0.08);
+      border-radius: 999px;
+      padding: 6px;
+      display: inline-flex;
+      gap: 6px;
+      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
+      align-items: center;
+      height: fit-content;
+    }
+
+    .toggle button {
+      border: 0;
+      background: transparent;
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 900;
+      color: rgba(15, 23, 42, 0.75);
+      transition: background-color 140ms ease, color 140ms ease, transform 140ms ease;
+    }
+
+    .toggle button:hover { transform: translateY(-1px); }
+
+    .toggle .is-active {
+      background: rgba(79, 70, 229, 0.12);
+      color: rgba(79, 70, 229, 1);
+      outline: 2px solid rgba(79, 70, 229, 0.20);
+      outline-offset: -2px;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .price-card {
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(2, 6, 23, 0.08);
+      border-radius: var(--radius-card);
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 320px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .price-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(79, 70, 229, 0.22);
+      box-shadow: 0 14px 34px rgba(2, 6, 23, 0.10);
+    }
+
+    .price-card.is-featured {
+      border-color: rgba(79, 70, 229, 0.35);
+      background: linear-gradient(180deg, rgba(79, 70, 229, 0.08), rgba(255,255,255,0.65));
+      box-shadow: 0 16px 42px rgba(79, 70, 229, 0.15);
+    }
+
+    .plan-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+    .plan-name {
+      font-weight: 1000;
+      letter-spacing: -0.4px;
+      font-size: 16px;
+      margin: 0;
+    }
+
+    .plan-tag {
+      background: rgba(79, 70, 229, 0.12);
+      border: 1px solid rgba(79, 70, 229, 0.22);
+      color: rgba(79, 70, 229, 1);
+      font-weight: 950;
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      width: fit-content;
+    }
+
+    .price { display: flex; align-items: flex-end; gap: 10px; }
+
+    .price .amount {
+      font-weight: 1000;
+      font-size: 40px;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .price .per {
+      color: rgba(71, 85, 105, 0.95);
+      font-weight: 800;
+      padding-bottom: 7px;
+      font-size: 13px;
+    }
+
+    .plan-desc {
+      margin: 0;
+      color: rgba(71, 85, 105, 0.98);
+      font-weight: 650;
+      font-size: 14px;
+    }
+
+    .features-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+
+    .features-list li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      color: rgba(71, 85, 105, 0.98);
+      font-weight: 650;
+      font-size: 14px;
+    }
+
+    .check {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      background: rgba(79, 70, 229, 0.12);
+      border: 1px solid rgba(79, 70, 229, 0.22);
+      color: rgba(79, 70, 229, 1);
+      font-weight: 1000;
+      margin-top: 1px;
+    }
+
+    .plan-cta {
+      margin-top: auto;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .skeleton-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+
+    .price-card.is-loading .skeleton-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .skeleton {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .shimmer-line {
+      height: 14px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(2,6,23,0.06), rgba(2,6,23,0.02), rgba(2,6,23,0.06));
+      background-size: 200% 100%;
+      animation: sk-shimmer 1.2s infinite;
+    }
+
+    .shimmer-box {
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(90deg, rgba(2,6,23,0.06), rgba(2,6,23,0.02), rgba(2,6,23,0.06));
+      background-size: 200% 100%;
+      animation: sk-shimmer 1.2s infinite;
+    }
+
+    @keyframes sk-shimmer {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+
+    /* ============ Responsive ============ */
+    .mobile-nav-toggle { display: none; }
+    .mobile-nav-panel { display: none; }
+
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-right { min-height: 320px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
+
+      .navbar {
+        grid-template-columns: 1fr auto;
+        grid-template-areas: "brand toggle";
+      }
+
+      .brand { min-width: 0; }
+      .nav-links { display: none; }
+      .nav-cta { display: none; }
+
+      .mobile-nav-toggle {
+        display: inline-flex;
+        justify-content: flex-end;
+        align-items: center;
+        min-width: auto;
+      }
+
+      .mobile-nav-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        border: 1px solid rgba(2,6,23,0.08);
+        background: rgba(255,255,255,0.55);
+        box-shadow: 0 8px 20px rgba(2,6,23,0.06);
+        cursor: pointer;
+        transition: transform 140ms ease;
+        display: grid;
+        place-items: center;
+      }
+
+      .mobile-nav-btn:hover { transform: translateY(-1px); }
+
+      .mobile-nav-panel {
+        display: block;
+        margin-top: 10px;
+        background: rgba(244, 244, 247, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(2, 6, 23, 0.08);
+        border-radius: 16px;
+        padding: 12px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .mobile-nav-links {
+        display: grid;
+        gap: 10px;
+      }
+
+      .mobile-nav-links a {
+        padding: 12px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(2,6,23,0.06);
+        background: rgba(255,255,255,0.55);
+        font-weight: 800;
+        color: rgba(15, 23, 42, 0.85);
+      }
+    }
+
+    /* Utility */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar-wrap" aria-label="Top navigation">
+    <div class="container">
+      <div class="navbar">
+        <a class="brand" href="#" aria-label="Brand">
+          <span class="logo-mark" aria-hidden="true">B</span>
+<span class="brand-name">arvind</span>
+        </a>
+
+        <nav class="nav-links" aria-label="Primary">
+          <a class="nav-link" href="#features">Features</a>
+          <a class="nav-link" href="#pricing">Pricing</a>
+          <a class="nav-link" href="#how">How it works</a>
+          <a class="nav-link" href="#faq">FAQ</a>
+        </nav>
+
+        <div class="nav-cta" aria-label="Actions">
+          <a class="btn btn-primary" href="#pricing">
+            <span aria-hidden="true">⚡</span>
+            Get started
+          </a>
+        </div>
+
+        <div class="mobile-nav-toggle mobile-nav-toggle" aria-label="Mobile actions">
+          <button class="mobile-nav-btn" id="mobileNavBtn" type="button" aria-expanded="false" aria-controls="mobileNavPanel" aria-label="Open menu">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M4 7H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M4 17H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="mobileNavPanel" class="mobile-nav-panel" hidden>
+        <div class="mobile-nav-links" role="navigation" aria-label="Mobile Primary">
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#how">How it works</a>
+          <a href="#faq">FAQ</a>
+          <a class="btn btn-primary" style="justify-content:center" href="#pricing">Get started</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-label="Hero">
+      <div class="container">
+        <div class="hero-grid">
+          <div>
+            <div class="kicker">
+              <span class="kicker-dot" aria-hidden="true"></span>
+              Ship faster with a polished UI system
+            </div>
+
+            <h1>Simple elements, standout landing experiences.</h1>
+
+            <p class="lead">
+              A high-conversion desktop & mobile layout with glass navigation, feature cards, tooltips, and interactive pricing.
+              Built for scannability and speed.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#pricing">Start free</a>
+              <a class="btn btn-ghost" href="#features">
+                <span aria-hidden="true">▶</span>
+                Explore features
+              </a>
+
+              <div class="tooltip" id="heroTooltip">
+                <button class="tip-btn" type="button" aria-label="What’s included" aria-expanded="false">
+                  i
+                </button>
+                <div class="tooltip-bubble" role="dialog" aria-label="Tooltip">
+                  Includes glass navbar, interactive pricing toggle, hover states, and loading skeleton frames.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-right" aria-label="Product preview">
+            <div class="mini-stats">
+              <div class="stat">
+                <strong>48ms</strong>
+                <span>UI interactions</span>
+              </div>
+              <div class="stat">
+                <strong>8px</strong>
+                <span>Card radius</span>
+              </div>
+            </div>
+
+            <div class="hero-mock" aria-hidden="true">
+              <div class="mock-topbar">
+                <div class="mock-dots">
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                </div>
+                <div class="mock-chip">Live preview</div>
+              </div>
+              <div class="mock-body">
+                <div class="mock-row" style="width: 84%"></div>
+                <div class="mock-row" style="width: 92%"></div>
+                <div class="mock-row" style="width: 76%"></div>
+                <div class="mock-row" style="width: 88%"></div>
+                <div class="mock-row" style="width: 62%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features" aria-label="Features">
+      <div class="container">
+        <div class="features-head">
+          <div>
+            <h2 style="margin:0">Designed for clarity</h2>
+          </div>
+          <p>
+            A clean bento-style flow: hero, three feature cards, then pricing with an interactive toggle.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <article class="card">
+            <div class="icon-badge" aria-hidden="true">✓</div>
+            <h3>Glassmorphism navigation</h3>
+            <p>
+              Sticky, semi-transparent navbar with blur for modern depth—while keeping contrast readable.
+            </p>
+            <a class="card-link" href="#pricing" aria-label="Jump to pricing">
+              See pricing <span aria-hidden="true">→</span>
+            </a>
+          </article>
+
+          <article class="card">
+            <div class="icon-badge" aria-hidden="true">⌁</div>
+            <h3>Interactive tooltips</h3>
+            <p>
+              Clear hover and click states, with an accessible “i” bubble for micro-guidance.
+            </p>
+            <a class="card-link" href="#how" aria-label="Jump to how it works">
+              How it works <span aria-hidden="true">→</span>
+            </a>
+          </article>
+
+          <article class="card">
+            <div class="icon-badge" aria-hidden="true">⟲</div>
+            <h3>Loading skeleton frames</h3>
+            <p>
+              Subtle shimmering placeholders during pricing updates—feels fast and intentional.
+            </p>
+            <a class="card-link" href="#pricing" aria-label="Try the pricing toggle">
+              Try toggle <span aria-hidden="true">→</span>
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="pricing" aria-label="Pricing">
+      <!-- anchor sections below navigation -->
+      <div class="container">
+        <div class="pricing-head">
+          <div>
+            <h2>Pricing that scales</h2>
+            <p>Toggle monthly vs annual. Updates show skeleton frames to reinforce responsiveness.</p>
+          </div>
+
+          <div class="toggle" role="tablist" aria-label="Billing interval">
+            <button type="button" id="toggleMonthly" class="is-active" role="tab" aria-selected="true">Monthly</button>
+            <button type="button" id="toggleAnnual" role="tab" aria-selected="false">Annual</button>
+          </div>
+        </div>
+
+        <div class="pricing-grid" aria-live="polite">
+          <article class="price-card" data-plan="starter">
+            <div class="plan-top">
+              <h3 class="plan-name">Starter</h3>
+              <span class="plan-tag">Great for testing</span>
+            </div>
+            <div class="price">
+              <span class="amount" data-amount-monthly>12</span>
+              <span class="amount" data-amount-annual hidden>108</span>
+              <span class="per" data-per-monthly>/mo</span>
+              <span class="per" data-per-annual hidden>/yr</span>
+            </div>
+            <p class="plan-desc">Everything you need for a simple launch.</p>
+            <ul class="features-list">
+              <li><span class="check" aria-hidden="true">✓</span> Landing sections</li>
+              <li><span class="check" aria-hidden="true">✓</span> Pricing toggle UI</li>
+              <li><span class="check" aria-hidden="true">✓</span> Tooltip patterns</li>
+            </ul>
+            <div class="plan-cta">
+              <a class="btn btn-ghost" href="#">Choose Starter</a>
+            </div>
+
+            <div class="skeleton-overlay" aria-hidden="true">
+              <div class="skeleton">
+                <div class="shimmer-line" style="width: 60%"></div>
+                <div class="shimmer-box" style="width: 85%"></div>
+                <div class="shimmer-line" style="width: 95%"></div>
+                <div class="shimmer-line" style="width: 92%"></div>
+                <div class="shimmer-line" style="width: 88%"></div>
+                <div class="shimmer-line" style="width: 75%"></div>
+
+            </div>
+          </div>
+          <!-- end skeleton -->
+
+        </article>
+
+        <!-- NOTE: The original prototype only included the Starter plan markup.
+             Close the pricing grid and section so scripts can attach safely. -->
+      </div>
+    </section>
+
+    <section id="how" class="how" aria-label="How it works">
+      <div class="container">
+        <div class="features-head">
+          <div>
+            <h2 style="margin:0">How it works</h2>
+          </div>
+          <p>Scroll-driven navigation highlights the section you’re currently reading.</p>
+        </div>
+        <div class="features-grid">
+          <article class="card">
+            <div class="icon-badge" aria-hidden="true">1</div>
+            <h3>Click a link</h3>
+            <p>Navigation smooth-scrolls to the target section.</p>
+          </article>
+          <article class="card">
+            <div class="icon-badge" aria-hidden="true">2</div>
+            <h3>Active state updates</h3>
+            <p>An Intersection Observer highlights the section in view.</p>
+          </article>
+          <article class="card">
+            <div class="icon-badge" aria-hidden="true">3</div>
+            <h3>Glass hover feels iOS</h3>
+            <p>Subtle opacity + underline transitions match the theme.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="faq" aria-label="FAQ">
+      <div class="container">
+        <div class="features-head">
+          <div>
+            <h2 style="margin:0">FAQ</h2>
+          </div>
+          <p>Quick answers for common navigation + interaction questions.</p>
+        </div>
+        <div class="features-grid">
+          <article class="card">
+            <div class="icon-badge" aria-hidden="true">?</div>
+            <h3>Does it work without libraries?</h3>
+            <p>Yes—vanilla JS with Intersection Observer.</p>
+          </article>
+          <article class="card">
+            <div class="icon-badge" aria-hidden="true">✓</div>
+            <h3>Will it highlight on mobile?</h3>
+            <p>Yes, the same active logic runs for desktop + mobile links.</p>
+          </article>
+          <article class="card">
+            <div class="icon-badge" aria-hidden="true">↩</div>
+            <h3>What about smooth scrolling?</h3>
+            <p>Enabled globally via CSS + JS fallback for hash navigation.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    (function () {
+      const toggleMonthly = document.getElementById('toggleMonthly');
+      const navLinks = Array.from(document.querySelectorAll('a.nav-link'));
+      const sectionIds = ['features', 'pricing', 'how', 'faq'];
+      const sections = sectionIds
+        .map((id) => document.getElementById(id))
+        .filter(Boolean);
+
+      function setActiveNav(sectionId) {
+        navLinks.forEach((a) => {
+          const href = a.getAttribute('href') || '';
+          const targetId = href.startsWith('#') ? href.slice(1) : null;
+          a.classList.toggle('is-active', targetId === sectionId);
+        });
+      }
+
+      // Smooth scrolling + active state handling
+      // - CSS already sets scroll-behavior: smooth
+      // - JS adds a safe fallback and ensures mobile nav closes on click
+      navLinks.forEach((link) => {
+        link.addEventListener('click', (e) => {
+          const href = link.getAttribute('href');
+          if (!href || !href.startsWith('#')) return;
+          const target = document.querySelector(href);
+          if (!target) return;
+
+          // If browser supports scrollIntoView behavior smooth, use it.
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+          // Close mobile menu if open
+          const panelEl = document.getElementById('mobileNavPanel');
+          const mobileBtnEl = document.getElementById('mobileNavBtn');
+          if (panelEl && mobileBtnEl) {
+            panelEl.hidden = true;
+            mobileBtnEl.setAttribute('aria-expanded', 'false');
+          }
+        });
+      });
+
+      // Intersection Observer: highlight the section currently visible
+      if ('IntersectionObserver' in window && sections.length) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            // Pick the most visible intersecting entry
+            const visible = entries
+              .filter((en) => en.isIntersecting)
+              .sort((a, b) => (b.intersectionRatio || 0) - (a.intersectionRatio || 0));
+            if (visible.length) {
+              const id = visible[0].target.id;
+              setActiveNav(id);
+            }
+          },
+          {
+            // Account for sticky navbar by shifting the viewport down a bit.
+            root: null,
+            threshold: [0.25, 0.4, 0.55, 0.7],
+            rootMargin: '-20% 0px -60% 0px',
+          }
+        );
+
+        sections.forEach((section) => observer.observe(section));
+      }
+
+      // Ensure correct initial state (e.g., page refresh mid-scroll)
+      const initialSection = sections.find((s) => {
+        const r = s.getBoundingClientRect();
+        return r.top <= 120 && r.bottom >= 200;
+      });
+      setActiveNav(initialSection ? initialSection.id : 'features');
+
+      const toggleAnnual = document.getElementById('toggleAnnual');
+      const tooltipRoot = document.getElementById('heroTooltip');
+      const mobileBtn = document.getElementById('mobileNavBtn');
+      const panel = document.getElementById('mobileNavPanel');
+
+      const priceCards = Array.from(document.querySelectorAll('.price-card'));
+
+      function setToggle(monthly) {
+        if (toggleMonthly) {
+          toggleMonthly.classList.toggle('is-active', monthly);
+          toggleMonthly.setAttribute('aria-selected', monthly ? 'true' : 'false');
+        }
+        if (toggleAnnual) {
+          toggleAnnual.classList.toggle('is-active', !monthly);
+          toggleAnnual.setAttribute('aria-selected', !monthly ? 'true' : 'false');
+        }
+
+        priceCards.forEach((card) => {
+          const amountMonthly = card.querySelector('[data-amount-monthly]');
+          const amountAnnual = card.querySelector('[data-amount-annual]');
+          const perMonthly = card.querySelector('[data-per-monthly]');
+          const perAnnual = card.querySelector('[data-per-annual]');
+
+          if (amountMonthly) amountMonthly.hidden = !monthly;
+          if (amountAnnual) amountAnnual.hidden = monthly;
+          if (perMonthly) perMonthly.hidden = !monthly;
+          if (perAnnual) perAnnual.hidden = monthly;
+        });
+      }
+
+      if (toggleMonthly && toggleAnnual) {
+        toggleMonthly.addEventListener('click', () => setToggle(true));
+        toggleAnnual.addEventListener('click', () => setToggle(false));
+        setToggle(true);
+      }
+
+      // Tooltip click toggle
+      if (tooltipRoot) {
+        const btn = tooltipRoot.querySelector('.tip-btn');
+        btn && btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const open = tooltipRoot.classList.toggle('is-open');
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!tooltipRoot.classList.contains('is-open')) return;
+          if (tooltipRoot.contains(e.target)) return;
+          tooltipRoot.classList.remove('is-open');
+          const btn2 = tooltipRoot.querySelector('.tip-btn');
+          btn2 && btn2.setAttribute('aria-expanded', 'false');
+        });
+      }
+
+      // Mobile nav open/close
+      if (mobileBtn && panel) {
+        mobileBtn.addEventListener('click', () => {
+          const open = panel.hidden;
+          panel.hidden = !open;
+          mobileBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+
+        panel.addEventListener('click', (e) => {
+          const a = e.target && e.target.closest && e.target.closest('a');
+          if (a) {
+            panel.hidden = true;
+            mobileBtn.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
+
